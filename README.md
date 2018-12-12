@@ -17,5 +17,6 @@ Usage:
     table.where(...).column1 # -> [_[0] for _ in table.where(...).select('column1')]
     table.where(...)['column1'] # same
     table.where(...).update(column1=value1, column2=value2) # update table
+    table.where(...).column1 = new_value # -> table.where(...).update(column1=new_value)
     table.where(...).delete() # delete matching rows
     table.delete(*args, **kwargs) # same
