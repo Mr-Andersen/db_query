@@ -1,9 +1,10 @@
-# dbquery
+# db_query
 Python3 module for comfortable using of database (tested for sqlite3)
 
 Usage:
 
-    table = dbquery.Table(sqlite3.connect('datebase.db'), 'tablename')
+    import db_query
+    table = db_query.Table(sqlite3.connect('datebase.db'), 'tablename')
     table.where(column1=value1, column2=value2) # -> list of rows matching given equalities
     table.where(column1=(value11, value12), column2=value2) # -> executes 'SELECT * FROM tablename WHERE (column1 = value11 OR column1 = value12) AND column2 = value2' and returns result
     table.where('column1 LIKE "val%1" AND column2 = "kek"') # also you can pass part of "raw" sql query (beware of vulnerabilities)
