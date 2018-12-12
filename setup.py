@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='dbquery',
+    name='db_query',
     version='1.1.1',
     author='Andrew Anderson',
     author_email='andrew-anderson.neo@yandex.ru',
