@@ -15,9 +15,16 @@ def fit_atom(x, kwargs={}):
     raise TypeError(f'Unknown type for fitting: {type(x)}')
 
 
-def fit_dict(dct, sep=' AND ', key_func=str, value_func=fit_atom):
-    return sep.join(f'{key_func(key)} = {value_func(value)}'
-                    for key, value in dct.items())
+def fit_dict(dct, sep=' AND ', subsep=' OR ',
+             key_func=str, atom_func=fit_atom):
+    res = []
+    for key, value in dct.items():
+        if type(value) is tuple:
+            it = (f'{key_func(key)} = {atom_func(subval)}' for subval in value)
+            res.append(f'({subsep.join(it)})')
+        else:
+            res.append(f'{key} = {atom_func(value)}')
+    return sep.join(res)
 
 
 def fit_list(lst, sep=', ', func=str):
@@ -88,15 +95,6 @@ class EntryList(DummyClass):
         DummyClass.__getattribute__(self, 'db').execute(query)
         DummyClass.__getattribute__(self, 'db').commit()
 
-    def __iter__(self):
-        return iter(self.select())
-
-    def __repr__(self):
-        return str(list(self))
-
-    def __call__(self, *args):
-        return self.select(*args)
-
     def __getitem__(self, name):
         return [i[0] for i in self.select(name)]
 
@@ -108,6 +106,15 @@ class EntryList(DummyClass):
 
     def __setattr__(self, name, value):
         return self.update(**{name: value})
+
+    def __iter__(self):
+        return iter(self.select())
+
+    def __repr__(self):
+        return str(list(self))
+
+    def __call__(self, *args):
+        return self.select(*args)
 
     def __len__(self):
         return len(self.select())
