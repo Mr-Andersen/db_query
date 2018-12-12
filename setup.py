@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='dbquery',
+    name='db_query',
     version='1.1.1',
     author='Andrew Anderson',
     author_email='andrew-anderson.neo@yandex.ru',
@@ -14,7 +14,7 @@ setuptools.setup(
                 '(tested for sqlite3)',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/Mr-Andersen/dbquery',
+    url='https://github.com/Mr-Andersen/db_query',
     packages=setuptools.find_packages(),
     license='MIT',
     classifiers=[
