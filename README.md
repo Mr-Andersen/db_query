@@ -1,5 +1,6 @@
 # dbquery
 Python3 module for comfortable using of database (tested for sqlite3)
+
 Usage:
 
     table = dbquery.Table(sqlite3.connect('datebase.db'), 'tablename')

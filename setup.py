@@ -7,7 +7,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='dbquery',
-    version='1.1.0',
+    version='1.1.1',
     author='Andrew Anderson',
     author_email='andrew-anderson.neo@yandex.ru',
     description='Module for comfortable using of database '
@@ -17,10 +17,10 @@ setuptools.setup(
     url='https://github.com/Mr-Andersen/dbquery',
     packages=setuptools.find_packages(),
     license='MIT',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-    ),
+    ],
     install_requires=[]
 )
