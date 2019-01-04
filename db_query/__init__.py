@@ -16,14 +16,14 @@ def fit_atom(x, kwargs={}):
 
 
 def fit_dict(dct, sep=' AND ', subsep=' OR ',
-             key_func=str, atom_func=fit_atom):
+             key_func=str, val_func=fit_atom):
     res = []
     for key, value in dct.items():
         if type(value) is tuple:
-            it = (f'{key_func(key)} = {atom_func(subval)}' for subval in value)
+            it = (f'{key_func(key)} = {val_func(subval)}' for subval in value)
             res.append(f'({subsep.join(it)})')
         else:
-            res.append(f'{key} = {atom_func(value)}')
+            res.append(f'{key_func(key)} = {val_func(value)}')
     return sep.join(res)
 
 
@@ -35,65 +35,65 @@ def get_columns(db, table):
     return [i[1] for i in db.execute(f'PRAGMA table_info({table})').fetchall()]
 
 
-class DummyClass:
-    pass
+def create_table(db, table, types):
+    db.execute(f'CREATE TABLE {table}({types})')
 
 
-class EntryList(DummyClass):
+class EntryList:
     def __init__(self, db, table, selection):
-        DummyClass.__setattr__(self, 'db', db)
-        DummyClass.__setattr__(self, 'table', table)
-        DummyClass.__setattr__(self, 'selection', selection)
+        object.__setattr__(self, 'db', db)
+        object.__setattr__(self, 'table', table)
+        object.__setattr__(self, 'selection', selection)
 
     def select(self, *args):
-        columns = get_columns(DummyClass.__getattribute__(self, 'db'),
-                              DummyClass.__getattribute__(self, 'table'))
+        columns = get_columns(object.__getattribute__(self, 'db'),
+                              object.__getattribute__(self, 'table'))
         if len(args):
             for i in args:
                 if i not in columns:
                     raise AttributeError(f'Key {i} not found in columns')
         else:
             args = columns
-        selection = DummyClass.__getattribute__(self, 'selection')
+        selection = object.__getattribute__(self, 'selection')
         if len(selection):
             query = f'SELECT {fit_list(args)} FROM '\
-                    f'{DummyClass.__getattribute__(self, "table")} WHERE '\
+                    f'{object.__getattribute__(self, "table")} WHERE '\
                     f'{selection}'
         else:
             query = f'SELECT {fit_list(args)} FROM '\
-                    f'{DummyClass.__getattribute__(self, "table")}'
-        res = DummyClass.__getattribute__(self, 'db').execute(query).fetchall()
+                    f'{object.__getattribute__(self, "table")}'
+        res = object.__getattribute__(self, 'db').execute(query).fetchall()
         return res
 
     def update(self, **kwargs):
-        columns = get_columns(DummyClass.__getattribute__(self, 'db'),
-                              DummyClass.__getattribute__(self, 'table'))
+        columns = get_columns(object.__getattribute__(self, 'db'),
+                              object.__getattribute__(self, 'table'))
         assert(len(kwargs) > 0)
         for i in kwargs.keys():
             if i not in columns:
                 raise AttributeError(f'Key {i} not found in columns')
-        selection = DummyClass.__getattribute__(self, 'selection')
+        selection = object.__getattribute__(self, 'selection')
         if len(selection):
-            query = f'UPDATE {DummyClass.__getattribute__(self, "table")} '\
+            query = f'UPDATE {object.__getattribute__(self, "table")} '\
                     f'SET {fit_dict(kwargs, sep=", ")} WHERE '\
                     f'{selection}'
         else:
-            query = f'UPDATE {DummyClass.__getattribute__(self, "table")} '\
+            query = f'UPDATE {object.__getattribute__(self, "table")} '\
                     f'SET {fit_dict(kwargs, sep=", ")}'
-        DummyClass.__getattribute__(self, 'db').execute(query)
-        DummyClass.__getattribute__(self, 'db').commit()
+        object.__getattribute__(self, 'db').execute(query)
+        object.__getattribute__(self, 'db').commit()
 
     def delete(self):
-        selection = DummyClass.__getattribute__(self, 'selection')
+        selection = object.__getattribute__(self, 'selection')
         if len(selection):
             query = 'DELETE FROM '\
-                    f'{DummyClass.__getattribute__(self, "table")} '\
+                    f'{object.__getattribute__(self, "table")} '\
                     f'WHERE {selection}'
         else:
             query = 'DELETE FROM '\
-                    f'{DummyClass.__getattribute__(self, "table")}'
-        DummyClass.__getattribute__(self, 'db').execute(query)
-        DummyClass.__getattribute__(self, 'db').commit()
+                    f'{object.__getattribute__(self, "table")}'
+        object.__getattribute__(self, 'db').execute(query)
+        object.__getattribute__(self, 'db').commit()
 
     def __getitem__(self, name):
         return [i[0] for i in self.select(name)]
@@ -127,13 +127,11 @@ class Table:
         self.db = db
         self.table = table
 
-    def where(self, selection=None, **kwargs):
-        if selection and len(kwargs):
-            raise TypeError('Table.where doesn\'t accept both '
-                            'selection and **kwargs')
-        if selection:
-            return EntryList(self.db, self.table, selection)
+    def where(self, **kwargs):
         return EntryList(self.db, self.table, fit_dict(kwargs))
+
+    def where_raw(self, selection):
+        return EntryList(self.db, self.table, selection)
 
     def insert(self, *args, **kwargs):
         if len(args) and len(kwargs):

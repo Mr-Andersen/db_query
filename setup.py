@@ -7,10 +7,10 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='db_query',
-    version='1.1.1',
+    version='1.2.0',
     author='Andrew Anderson',
     author_email='andrew-anderson.neo@yandex.ru',
-    description='Module for comfortable using of database '
+    description='Module for comfortable using of databases '
                 '(tested for sqlite3)',
     long_description=long_description,
     long_description_content_type='text/markdown',
