@@ -41,59 +41,69 @@ def create_table(db, table, types):
 
 class EntryList:
     def __init__(self, db, table, selection):
+        '''
         object.__setattr__(self, 'db', db)
         object.__setattr__(self, 'table', table)
         object.__setattr__(self, 'selection', selection)
+        '''
+        super().__setattr__('db', db)
+        super().__setattr__('table', table)
+        super().__setattr__('selection', selection)
 
     def select(self, *args):
-        columns = get_columns(object.__getattribute__(self, 'db'),
-                              object.__getattribute__(self, 'table'))
+        columns = get_columns(super().__getattribute__('db'),
+                              super().__getattribute__('table'))
         if len(args):
             for i in args:
                 if i not in columns:
+                    if i == '*':
+                        raise AttributeError(f"Key {i} not found in columns "
+                                             "(hint: instead of "
+                                             "<EntryList>.select('*') "
+                                             "use <EntryList>.select())")
                     raise AttributeError(f'Key {i} not found in columns')
         else:
             args = columns
-        selection = object.__getattribute__(self, 'selection')
+        selection = super().__getattribute__('selection')
         if len(selection):
             query = f'SELECT {fit_list(args)} FROM '\
-                    f'{object.__getattribute__(self, "table")} WHERE '\
+                    f'{super().__getattribute__("table")} WHERE '\
                     f'{selection}'
         else:
             query = f'SELECT {fit_list(args)} FROM '\
-                    f'{object.__getattribute__(self, "table")}'
-        res = object.__getattribute__(self, 'db').execute(query).fetchall()
+                    f'{super().__getattribute__("table")}'
+        res = super().__getattribute__('db').execute(query).fetchall()
         return res
 
     def update(self, **kwargs):
-        columns = get_columns(object.__getattribute__(self, 'db'),
-                              object.__getattribute__(self, 'table'))
+        columns = get_columns(super().__getattribute__('db'),
+                              super().__getattribute__('table'))
         assert(len(kwargs) > 0)
         for i in kwargs.keys():
             if i not in columns:
                 raise AttributeError(f'Key {i} not found in columns')
-        selection = object.__getattribute__(self, 'selection')
+        selection = super().__getattribute__('selection')
         if len(selection):
-            query = f'UPDATE {object.__getattribute__(self, "table")} '\
+            query = f'UPDATE {super().__getattribute__("table")} '\
                     f'SET {fit_dict(kwargs, sep=", ")} WHERE '\
                     f'{selection}'
         else:
-            query = f'UPDATE {object.__getattribute__(self, "table")} '\
+            query = f'UPDATE {super().__getattribute__("table")} '\
                     f'SET {fit_dict(kwargs, sep=", ")}'
-        object.__getattribute__(self, 'db').execute(query)
-        object.__getattribute__(self, 'db').commit()
+        super().__getattribute__('db').execute(query)
+        super().__getattribute__('db').commit()
 
     def delete(self):
-        selection = object.__getattribute__(self, 'selection')
+        selection = super().__getattribute__('selection')
         if len(selection):
             query = 'DELETE FROM '\
-                    f'{object.__getattribute__(self, "table")} '\
+                    f'{super().__getattribute__("table")} '\
                     f'WHERE {selection}'
         else:
             query = 'DELETE FROM '\
-                    f'{object.__getattribute__(self, "table")}'
-        object.__getattribute__(self, 'db').execute(query)
-        object.__getattribute__(self, 'db').commit()
+                    f'{super().__getattribute__("table")}'
+        super().__getattribute__('db').execute(query)
+        super().__getattribute__('db').commit()
 
     def __getitem__(self, name):
         return [i[0] for i in self.select(name)]
@@ -123,7 +133,7 @@ class EntryList:
 class Table:
     def __init__(self, db, table):
         if not len(get_columns(db, table)):
-            raise Exception(f'Table "{table}"" doesn\'t exist')
+            raise Exception(f'Table "{table}" doesn\'t exist')
         self.db = db
         self.table = table
 
@@ -135,10 +145,10 @@ class Table:
 
     def insert(self, *args, **kwargs):
         if len(args) and len(kwargs):
-            raise TypeError('Table.insert doesn\' accept both '
-                            '*args and **kwargs')
+            raise ValueError("Table.insert doesn't accept both "
+                             "*args and **kwargs")
         if not len(args) and not len(kwargs):
-            raise TypeError('Table.insert needs *args or **kwargs')
+            raise ValueError('Table.insert needs *args or **kwargs')
         if len(kwargs):
             query = f'INSERT INTO {self.table} ({fit_list(kwargs.keys())}) '\
                     f'VALUES ({fit_list(kwargs.values(), func=fit_atom)})'
@@ -153,3 +163,8 @@ class Table:
 
     def __call__(self, *args, **kwargs):
         return self.where(*args, **kwargs)
+
+    def __contains__(self, dct):
+        if not isinstance(dct, dict):
+            raise TypeError('`dct` has to be dict')
+        return len(self(**dct)) != 0

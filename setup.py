@@ -7,7 +7,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='db_query',
-    version='1.2.0',
+    version='1.2.1',
     author='Andrew Anderson',
     author_email='andrew-anderson.neo@yandex.ru',
     description='Module for comfortable using of databases '
