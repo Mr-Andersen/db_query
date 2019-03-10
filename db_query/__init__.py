@@ -6,11 +6,11 @@ def fit_atom(x, kwargs={}):
         return kwargs[type(x)](x)
     if x is None:
         return 'NULL'
-    if type(x) is bool:
+    if isinstance(x, bool):
         return str(int(x))
-    if type(x) is str:
+    if isinstance(x, str):
         return f'"{x}"'
-    if type(x) is int:
+    if isinstance(x, int):
         return str(x)
     raise TypeError(f'Unknown type for fitting: {type(x)}')
 
@@ -19,7 +19,7 @@ def fit_dict(dct, sep=' AND ', subsep=' OR ',
              key_func=str, val_func=fit_atom):
     res = []
     for key, value in dct.items():
-        if type(value) is tuple:
+        if isinstance(value, tuple):
             it = (f'{key_func(key)} = {val_func(subval)}' for subval in value)
             res.append(f'({subsep.join(it)})')
         else:
@@ -37,15 +37,11 @@ def get_columns(db, table):
 
 def create_table(db, table, types):
     db.execute(f'CREATE TABLE {table}({types})')
+    db.commit()
 
 
 class EntryList:
     def __init__(self, db, table, selection):
-        '''
-        object.__setattr__(self, 'db', db)
-        object.__setattr__(self, 'table', table)
-        object.__setattr__(self, 'selection', selection)
-        '''
         super().__setattr__('db', db)
         super().__setattr__('table', table)
         super().__setattr__('selection', selection)
@@ -72,13 +68,25 @@ class EntryList:
         else:
             query = f'SELECT {fit_list(args)} FROM '\
                     f'{super().__getattribute__("table")}'
-        res = super().__getattribute__('db').execute(query).fetchall()
-        return res
+        res = super().__getattribute__('db').execute(query)
+        while True:
+            one = res.fetchone()
+            if one is None:
+                raise StopIteration
+            yield one
+
+    def as_dict(self, *args):
+        if len(args) == 0:
+            args = get_columns(super().__getattribute__('db'),
+                               super().__getattribute__('table'))
+        lst = self.select(*args)
+        return (dict(zip(args, row)) for row in lst)
 
     def update(self, **kwargs):
         columns = get_columns(super().__getattribute__('db'),
                               super().__getattribute__('table'))
-        assert(len(kwargs) > 0)
+        if len(kwargs) == 0:
+            raise ValueError('<EntryList>.update needs **kwargs')
         for i in kwargs.keys():
             if i not in columns:
                 raise AttributeError(f'Key {i} not found in columns')
@@ -106,10 +114,10 @@ class EntryList:
         super().__getattribute__('db').commit()
 
     def __getitem__(self, name):
-        return [i[0] for i in self.select(name)]
+        return (i[0] for i in self.select(name))
 
     def __getattr__(self, name):
-        return [i[0] for i in self.select(name)]
+        return (i[0] for i in self.select(name))
 
     def __setitem__(self, name, value):
         return self.update(**{name: value})
@@ -118,16 +126,13 @@ class EntryList:
         return self.update(**{name: value})
 
     def __iter__(self):
-        return iter(self.select())
+        return self.select()
 
     def __repr__(self):
         return str(list(self))
 
     def __call__(self, *args):
         return self.select(*args)
-
-    def __len__(self):
-        return len(self.select())
 
 
 class Table:
@@ -167,4 +172,8 @@ class Table:
     def __contains__(self, dct):
         if not isinstance(dct, dict):
             raise TypeError('`dct` has to be dict')
-        return len(self(**dct)) != 0
+        try:
+            next(self(**dct).select())
+        except StopIteration:
+            return False
+        return True
